@@ -27,6 +27,7 @@ float                            vecToRectDistanceSquared(const Vector2D& vec, c
 void                             logSystemInfo();
 std::string                      execAndGet(const char*);
 int64_t                          getPPIDof(int64_t pid);
+std::string                      getCgroup2of(int64_t pid);
 int64_t                          configStringToInt(const std::string&);
 Vector2D                         configStringToVector2D(const std::string&);
 std::optional<float>             getPlusMinusKeywordResult(std::string in, float relative);

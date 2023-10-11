@@ -1081,6 +1081,14 @@ std::vector<SWindowRule> CConfigManager::getMatchingRules(CWindow* pWindow, bool
                             continue;
                     }
                 }
+
+                if (rule.szCgroup2 != "") {
+                    std::regex RULECHECK(rule.szCgroup2);
+                    std::string PCGROUP2 = getCgroup2of(pWindow->getPID());
+
+                    if (!std::regex_search(PCGROUP2, RULECHECK))
+                        continue;
+                }
             } catch (std::exception& e) {
                 Debug::log(ERR, "Regex error at {} ({})", rule.szValue, e.what());
                 continue;
@@ -1994,6 +2002,7 @@ std::optional<std::string> CConfigManager::handleWindowRuleV2(const std::string&
     const auto PINNEDPOS       = VALUE.find("pinned:");
     const auto FOCUSPOS        = VALUE.find("focus:");
     const auto ONWORKSPACEPOS  = VALUE.find("onworkspace:");
+    const auto CGROUP2POS      = VALUE.find("cgroup2:");
 
     // find workspacepos that isn't onworkspacepos
     size_t WORKSPACEPOS = std::string::npos;
@@ -2008,7 +2017,7 @@ std::optional<std::string> CConfigManager::handleWindowRuleV2(const std::string&
 
     if (TITLEPOS == std::string::npos && CLASSPOS == std::string::npos && INITIALTITLEPOS == std::string::npos && INITIALCLASSPOS == std::string::npos &&
         X11POS == std::string::npos && FLOATPOS == std::string::npos && FULLSCREENPOS == std::string::npos && PINNEDPOS == std::string::npos && WORKSPACEPOS == std::string::npos &&
-        FOCUSPOS == std::string::npos && ONWORKSPACEPOS == std::string::npos) {
+        FOCUSPOS == std::string::npos && ONWORKSPACEPOS == std::string::npos && CGROUP2POS == std::string::npos) {
         Debug::log(ERR, "Invalid rulev2 syntax: {}", VALUE);
         return "Invalid rulev2 syntax: " + VALUE;
     }
@@ -2040,6 +2049,8 @@ std::optional<std::string> CConfigManager::handleWindowRuleV2(const std::string&
             min = WORKSPACEPOS;
         if (FOCUSPOS > pos && FOCUSPOS < min)
             min = FOCUSPOS;
+        if (CGROUP2POS > pos && CGROUP2POS < min)
+            min = CGROUP2POS;
 
         result = result.substr(0, min - pos);
 
@@ -2084,6 +2095,9 @@ std::optional<std::string> CConfigManager::handleWindowRuleV2(const std::string&
     if (ONWORKSPACEPOS != std::string::npos)
         rule.szOnWorkspace = extract(ONWORKSPACEPOS + 12);
 
+    if (CGROUP2POS != std::string::npos)
+        rule.szCgroup2 = extract(CGROUP2POS + 8);
+
     if (RULE == "unset") {
         std::erase_if(m_dWindowRules, [&](const SWindowRule& other) {
             if (!other.v2) {
@@ -2120,6 +2134,9 @@ std::optional<std::string> CConfigManager::handleWindowRuleV2(const std::string&
                     return false;
 
                 if (!rule.szOnWorkspace.empty() && rule.szOnWorkspace != other.szOnWorkspace)
+                    return false;
+
+                if (!rule.szCgroup2.empty() && rule.szCgroup2 != other.szCgroup2)
                     return false;
 
                 return true;

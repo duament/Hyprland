@@ -182,6 +182,7 @@ struct SWindowRule {
     int         bFocus        = -1;
     std::string szOnWorkspace = ""; // empty means any
     std::string szWorkspace   = ""; // empty means any
+    std::string szCgroup2;
 };
 
 class CWindow {

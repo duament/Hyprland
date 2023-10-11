@@ -682,6 +682,41 @@ int64_t getPPIDof(int64_t pid) {
 #endif
 }
 
+std::string getCgroup2of(int64_t pid) {
+    std::string       dir     = "/proc/" + std::to_string(pid) + "/cgroup";
+    FILE*             infile;
+
+    infile = fopen(dir.c_str(), "r");
+    if (!infile)
+        return {};
+
+    char*       line = nullptr;
+    size_t      len  = 0;
+    ssize_t     len2 = 0;
+
+    std::string cgroup2;
+
+    while ((len2 = getline(&line, &len, infile)) != -1) {
+        if (len2 > 0 && line[0] == '0') {
+            std::string linestr;
+            if (line[len2 - 1] == '\n')
+                linestr = std::string(line, len2 - 1);
+            else
+                linestr = std::string(line, len2);
+            const auto colonpos = linestr.find_last_of(':');
+            if (colonpos != std::string::npos && colonpos != len2 - 1)
+                cgroup2 = linestr.substr(colonpos + 1);
+            break;
+        }
+    }
+
+    fclose(infile);
+    if (line)
+        free(line);
+
+    return cgroup2;
+}
+
 int64_t configStringToInt(const std::string& VALUE) {
     if (VALUE.starts_with("0x")) {
         // Values with 0x are hex
